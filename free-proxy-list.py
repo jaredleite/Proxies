@@ -2,13 +2,15 @@ import os
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-#from random import choice
+import time
 from time import sleep
+import csv
+# import target function
+#import WebCrawler_CarrosWeb_04_Model_BeautifulSoup as wc
 
 
-raw_proxies_file = os.getcwd() + '\\raw_proxies.csv'
 treated_proxies_file = os.getcwd() + '\\treated_proxies.csv'
-link_test_list_file = ''
+#link_test_list_file = ''
 
 
 proxyDict = {
@@ -17,6 +19,9 @@ proxyDict = {
 }
 
 url = 'https://free-proxy-list.net/'
+# free proxy list site
+
+fail_count = 0
 
 
 def test():
@@ -27,6 +32,7 @@ def test():
 
 
 def Raw_Proxies():
+    global fail_count
     r = requests.get(url, timeout=4)
     sleep(5)
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -49,35 +55,48 @@ def Raw_Proxies():
                 country.append(country_name)
                 https.append(https_YorN)
         except:
+            fail_count = fail_count + 1
+            print(f'Fail: Get list proxies - Count:{fail_count}')
             pass
 
     df = pd.DataFrame(list(zip(ip, country, https)),
                       columns=['ip', 'country', 'https'])
 
-    # print(df.head())
-    # print(df.tail())
-
-    df.to_csv(raw_proxies_file, index=False, encoding='utf-8')
     return df
 
 
 def Main():
+    global fail_count
     global proxyDict
-    good_proxies_list = []
+    n_list = 0
+    while fail_count <= 100:
+        n_list = n_list + 1
+        print(f'Raw list #{n_list}')
+        inicio = time.time()
+        df_raw_proxies = Raw_Proxies()
 
-    df_raw_proxies = Raw_Proxies()
-    for p in df_raw_proxies['ip']:
-        try:
-            proxyDict['http'] = p
-            proxyDict['https'] = p
+        for p in df_raw_proxies['ip']:
+            try:
+                proxyDict['http'] = p
+                proxyDict['https'] = p
 
-            r = test()
+                # r = target function
+                #r = wc.WedCrawler(p)
+                r = test()
+                if r == 200:
+                    with open(treated_proxies_file, 'a', newline='', encoding="utf-8") as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow([p])
+                        csvfile.close()
 
-            if r == 200:
-                good_proxies_list.append(p)
-        except:
-            print(f'fail/{p}')
-    print(good_proxies_list)
+                    print(f'sucess/{p}')
+                else:
+                    print(f'fail/{p}')
+            except:
+                print(f'fail/{p}')
+
+        fim = time.time()
+        print(f'Tempo de durção: {(fim - inicio)/60} min')
 
 
 Main()
