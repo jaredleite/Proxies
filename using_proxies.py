@@ -8,6 +8,7 @@ import random
 import csv
 import WebScraping_Timer
 # import target function
+import WebScaping_FichaCompleta_Proxy_Target as wc
 # import WebCrawler_CarrosWeb_04_Model_BeautifulSoup as wc
 
 start = time.time()
@@ -30,8 +31,7 @@ proxyDict = {
 def test(p):
     global proxyDict
 
-
-    if(p!=''):
+    if(p != ''):
         proxyDict['http'] = p
         proxyDict['https'] = p
         r = requests.get("http://ipinfo.io/json", timeout=3, proxies=proxyDict)
@@ -42,9 +42,10 @@ def test(p):
 
 
 def refresh_proxy_list():
-    global df_current_proxies
+    global df_treated_proxies
     global df_current_proxies
 
+    df_treated_proxies = pd.read_csv(treated_proxies_file, encoding='utf-8')
     for p in df_treated_proxies['proxy']:
         # print(p)
         if df_current_proxies[(df_current_proxies['proxy'] == p)].shape[0] == 0:
@@ -52,6 +53,7 @@ def refresh_proxy_list():
             # print(df_current_proxies)
     df_current_proxies.to_csv(current_proxies_file,
                               index=False, encoding='utf-8')
+    print('Atualizou current proxy')
 
 
 def set_timer():
@@ -101,27 +103,27 @@ while(end - start <= 60*60):
         p = ''
     try:
         # target function
-        r = test(p)
+        #r = test(p)
+        r = wc.WebScraping(p)
     except:
+        print('Target function fail')
         r = -1
 
     index = df_current_proxies[(
-            df_current_proxies['proxy'] == p)].index.item()
-    df_current_proxies.at[index, 'err_count'] = 0
-    
-    if r == 200:
+        df_current_proxies['proxy'] == p)].index.item()
 
+    if r == 200:
+        df_current_proxies.at[index, 'err_count'] = 0
         Timer.take_a_break()
 
     else:
         err_count = df_current_proxies.at[index, 'err_count']
         err_count = err_count + 1
-
         df_current_proxies.at[index, 'err_count'] = err_count
-        
+
         if err_count >= 100:
             df_current_proxies.at[index, 'status'] = 'off'
 
-        df_current_proxies.to_csv(current_proxies_file,
-                                  index=False, encoding='utf-8')
-        
+    df_current_proxies.to_csv(current_proxies_file,
+                              index=False, encoding='utf-8')
+    end = time.time()

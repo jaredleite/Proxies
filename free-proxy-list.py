@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 import time
 from time import sleep
 import csv
+
 # import target function
+import WebScaping_FichaCompleta_Proxy_Test as wc
 #import WebCrawler_CarrosWeb_04_Model_BeautifulSoup as wc
 
 
@@ -77,12 +79,14 @@ def Main():
 
         for p in df_raw_proxies['ip']:
             try:
-                proxyDict['http'] = p
-                proxyDict['https'] = p
+                #proxyDict['http'] = p
+                #proxyDict['https'] = p
 
                 # r = target function
                 #r = wc.WedCrawler(p)
-                r = test()
+                #r = test()
+                r = wc.WebScraping(p)
+
                 if r == 200:
                     with open(treated_proxies_file, 'a', newline='', encoding="utf-8") as csvfile:
                         writer = csv.writer(csvfile)
